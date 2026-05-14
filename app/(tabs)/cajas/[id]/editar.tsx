@@ -70,6 +70,8 @@ export default function EditarCajaScreen() {
       onDelete={async () => {
         const { error } = await supabase.from('cajas').delete().eq('id', cajaId);
         if (error) return { error: error.message };
+        // Pop editar + detalle — la caja ya no existe, hay que volver a la lista
+        router.back();
         router.back();
         return { error: null };
       }}
@@ -89,7 +91,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffe5e5',
     borderRadius: 8,
   },
-  errorText: {
-    color: '#b00020',
-  },
+  errorText: { color: '#b00020' },
 });

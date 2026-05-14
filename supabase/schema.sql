@@ -170,6 +170,8 @@ create policy "crear_operaciones" on public.operaciones for insert to authentica
 create policy "crear_movimientos" on public.movimientos for insert to authenticated
   with check (true);
 
--- Saldos: modificables por cualquier autenticado (la lógica vivirá en funciones después)
-create policy "modificar_saldos" on public.saldos_caja for all to authenticated
-  using (true) with check (true);
+-- Saldos: solo admin puede modificar directamente (ajustes manuales).
+-- Cajeros modificarán saldos vía operaciones (función SQL con security_definer, próximamente).
+create policy "admin_modifica_saldos" on public.saldos_caja for all to authenticated
+  using      (exists (select 1 from public.perfiles where id = auth.uid() and rol = 'admin'))
+  with check (exists (select 1 from public.perfiles where id = auth.uid() and rol = 'admin'));
