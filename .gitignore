@@ -30,6 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# IDE config (personal, no versionar)
+.idea/
+*.iml
+
 # local env files
 .env*.local
 
