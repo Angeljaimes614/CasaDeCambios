@@ -1,98 +1,101 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+
+type Moneda = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  simbolo: string;
+  decimales: number;
+  es_base: boolean;
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [monedas, setMonedas] = useState<Moneda[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    supabase
+      .from('monedas')
+      .select('*')
+      .order('codigo')
+      .then(({ data, error }) => {
+        if (error) setError(error.message);
+        else setMonedas(data as Moneda[]);
+      });
+  }, []);
+
+  return (
+    <ThemedView style={styles.container}>
+      <ThemedText type="title">CasaDeCambios</ThemedText>
+      <ThemedText type="subtitle" style={styles.subtitle}>
+        Prueba de conexión con Supabase
+      </ThemedText>
+
+      {error && (
+        <View style={styles.errorBox}>
+          <ThemedText style={styles.errorText}>Error: {error}</ThemedText>
+        </View>
+      )}
+
+      {!monedas && !error && <ActivityIndicator size="large" style={styles.loader} />}
+
+      {monedas && (
+        <View style={styles.list}>
+          <ThemedText type="defaultSemiBold">
+            {monedas.length} monedas cargadas desde Supabase:
+          </ThemedText>
+          {monedas.map((m) => (
+            <View key={m.id} style={styles.row}>
+              <ThemedText type="defaultSemiBold">{m.simbolo}</ThemedText>
+              <ThemedText>
+                {m.codigo} — {m.nombre}
+                {m.es_base ? ' (base)' : ''}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      )}
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    padding: 24,
+    paddingTop: 64,
+    gap: 16,
+  },
+  subtitle: {
+    opacity: 0.7,
+  },
+  loader: {
+    marginTop: 32,
+  },
+  list: {
+    gap: 12,
+    marginTop: 16,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#888',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  errorBox: {
+    padding: 12,
+    backgroundColor: '#ffe5e5',
+    borderRadius: 8,
+    marginTop: 16,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  errorText: {
+    color: '#b00020',
   },
 });
